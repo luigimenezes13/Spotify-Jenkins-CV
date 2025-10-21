@@ -1,68 +1,65 @@
 # Multi-stage build para otimização e segurança
-FROM node:24.10.0-alpine3.22 AS builder
+FROM python:3.12-alpine3.22 AS builder
 
 # Instalar dependências de sistema necessárias e limpar cache
 RUN apk add --no-cache \
     dumb-init \
+    gcc \
+    musl-dev \
     && rm -rf /var/cache/apk/*
 
-# Instalar pnpm com versão específica
-RUN npm install -g pnpm@10.17.1
-
 # Criar usuário não-root para build
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodeuser -u 1001 -G nodejs
+RUN addgroup -g 1001 -S python && \
+    adduser -S pythonuser -u 1001 -G python
 
 # Definir diretório de trabalho
 WORKDIR /app
 
 # Copiar arquivos de dependências primeiro (para melhor cache)
-COPY package.json pnpm-lock.yaml ./
+COPY pyproject.toml ./
 
 # Instalar dependências como usuário não-root
-RUN chown -R nodeuser:nodejs /app
-USER nodeuser
+RUN chown -R pythonuser:python /app
+USER pythonuser
 
-# Instalar dependências
-RUN pnpm install --frozen-lockfile
+# Criar ambiente virtual e instalar dependências
+RUN python -m venv /app/venv
+ENV PATH="/app/venv/bin:$PATH"
+RUN pip install --upgrade pip setuptools wheel
+RUN pip install -e .
 
 # Copiar código fonte
-COPY --chown=nodeuser:nodejs . .
-
-# Build da aplicação
-RUN pnpm run build
+COPY --chown=pythonuser:python . .
 
 # Stage de produção
-FROM node:24.10.0-alpine3.22 AS production
+FROM python:3.12-alpine3.22 AS production
 
 # Instalar dependências de sistema mínimas e limpar cache
 RUN apk add --no-cache \
     dumb-init \
     && rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
 
-# Instalar pnpm com versão específica
-RUN npm install -g pnpm@10.17.1
-
 # Criar usuário não-root para produção
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodeuser -u 1001 -G nodejs
+RUN addgroup -g 1001 -S python && \
+    adduser -S pythonuser -u 1001 -G python
 
 # Definir diretório de trabalho
 WORKDIR /app
 
 # Copiar arquivos de dependências
-COPY package.json pnpm-lock.yaml ./
+COPY pyproject.toml ./
 
-# Instalar apenas dependências de produção e limpar cache
-RUN pnpm install --prod --frozen-lockfile && \
-    pnpm store prune && \
-    rm -rf /home/nodeuser/.cache /tmp/* /var/tmp/*
+# Criar ambiente virtual e instalar apenas dependências de produção
+RUN python -m venv /app/venv
+ENV PATH="/app/venv/bin:$PATH"
+RUN pip install --upgrade pip setuptools wheel
+RUN pip install -e . --no-deps
 
-# Copiar build da aplicação
-COPY --from=builder --chown=nodeuser:nodejs /app/dist ./dist
+# Copiar código fonte
+COPY --chown=pythonuser:python . .
 
 # Trocar para usuário não-root
-USER nodeuser
+USER pythonuser
 
 # Expor porta
 EXPOSE 3000
@@ -71,14 +68,13 @@ EXPOSE 3000
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOST=0.0.0.0
-ENV NODE_OPTIONS="--max-old-space-size=512"
 
 # Health check com timeout mais robusto
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:3000/api/health')"
 
 # Usar dumb-init como PID 1 para melhor gerenciamento de sinais
 ENTRYPOINT ["dumb-init", "--"]
 
 # Comando para iniciar a aplicação
-CMD ["node", "dist/server.js"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "3000"]

@@ -1,42 +1,42 @@
 # Spotify Jenkins CV - API REST
 
-API REST desenvolvida com Node.js, TypeScript e pnpm, preparada para integração com Jenkins CI/CD.
+API REST desenvolvida com Python, FastAPI e pip, preparada para integração com Jenkins CI/CD.
 
 ## 🚀 Tecnologias
 
-- **Node.js** 18.18.0
-- **TypeScript** 5.2.2
-- **Express.js** 4.18.2
-- **pnpm** 8.15.0
-- **Jest** (testes)
-- **ESLint** + **Prettier** (qualidade de código)
+- **Python** 3.12
+- **FastAPI** 0.104+
+- **Pydantic** 2.5+ (validação e serialização)
+- **Uvicorn** (servidor ASGI)
+- **pytest** (testes)
+- **ruff** + **black** (qualidade de código)
 - **Docker** (containerização)
 - **Jenkins** (CI/CD)
 
 ## 📁 Estrutura do Projeto
 
 ```
-src/
-├── controllers/     # Controllers da API
-├── routes/         # Definição das rotas
-├── middlewares/    # Middlewares personalizados
-├── services/       # Lógica de negócio
-├── types/          # Definições TypeScript
-├── utils/          # Utilitários
-├── app.ts          # Configuração do Express
-└── server.ts       # Inicialização do servidor
+app/
+├── api/
+│   ├── routes/          # Routers do FastAPI
+│   └── middlewares/     # Middlewares CORS e error
+├── core/
+│   ├── config.py        # Configurações e env vars
+│   └── logging.py       # Logger singleton
+├── models/
+│   └── schemas.py       # Pydantic models (tipos)
+└── main.py              # Aplicação FastAPI principal
 
-tests/              # Testes unitários e integração
-├── setup.ts        # Configuração dos testes
-└── *.test.ts       # Arquivos de teste
+tests/                   # Testes unitários e integração
+└── test_*.py           # Arquivos de teste
 ```
 
 ## 🛠️ Instalação e Desenvolvimento
 
 ### Pré-requisitos
 
-- Node.js >= 18.0.0
-- pnpm >= 8.0.0
+- Python >= 3.12
+- pip
 
 ### Instalação
 
@@ -45,8 +45,14 @@ tests/              # Testes unitários e integração
 git clone <repository-url>
 cd spotify-jenkins-cv
 
+# Criar ambiente virtual
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# ou
+venv\Scripts\activate     # Windows
+
 # Instalar dependências
-pnpm install
+pip install -e .[dev]
 
 # Configurar variáveis de ambiente
 cp .env.example .env
@@ -56,22 +62,20 @@ cp .env.example .env
 
 ```bash
 # Desenvolvimento
-pnpm dev              # Inicia servidor em modo desenvolvimento
+uvicorn app.main:app --reload --host 0.0.0.0 --port 3000
 
-# Build
-pnpm build            # Compila TypeScript para JavaScript
-pnpm start            # Inicia servidor em produção
+# Produção
+uvicorn app.main:app --host 0.0.0.0 --port 3000
 
 # Qualidade de código
-pnpm lint             # Executa ESLint
-pnpm lint:fix         # Corrige problemas do ESLint
-pnpm format           # Formata código com Prettier
-pnpm format:check     # Verifica formatação
+ruff check app/ tests/           # Executa linting
+black app/ tests/                # Formata código
+black --check app/ tests/        # Verifica formatação
 
 # Testes
-pnpm test             # Executa todos os testes
-pnpm test:watch       # Executa testes em modo watch
-pnpm test:coverage    # Executa testes com relatório de cobertura
+pytest                           # Executa todos os testes
+pytest --cov=app                # Executa testes com cobertura
+pytest --cov=app --cov-report=html  # Gera relatório HTML
 ```
 
 ## 🌐 Endpoints
@@ -106,7 +110,7 @@ GET /
 ```json
 {
   "success": true,
-  "message": "API REST Node.js + TypeScript está funcionando!",
+  "message": "API REST Python + FastAPI está funcionando!",
   "version": "1.0.0"
 }
 ```
@@ -130,14 +134,13 @@ docker run -p 3000:3000 spotify-jenkins-cv
 O projeto inclui um `Jenkinsfile` configurado com pipeline completo:
 
 1. **Checkout** - Clonagem do código
-2. **Setup Environment** - Instalação Node.js e pnpm
+2. **Setup Environment** - Instalação Python 3.12
 3. **Install Dependencies** - Instalação das dependências
-4. **Lint** - Verificação de qualidade de código
-5. **Format Check** - Verificação de formatação
-6. **Type Check** - Verificação de tipos TypeScript
-7. **Test** - Execução de testes com cobertura
-8. **Build Docker Image** - Construção da imagem Docker
-9. **Deploy** - Deploy automático (staging/produção)
+4. **Lint** - Verificação de qualidade de código com ruff
+5. **Format Check** - Verificação de formatação com black
+6. **Test** - Execução de testes com cobertura
+7. **Build Docker Image** - Construção da imagem Docker
+8. **Deploy** - Deploy automático (staging/produção)
 
 ### Configuração no Jenkins
 
@@ -150,16 +153,16 @@ O projeto inclui um `Jenkinsfile` configurado com pipeline completo:
 
 ```bash
 # Executar todos os testes
-pnpm test
+pytest
 
-# Executar testes em modo watch
-pnpm test:watch
+# Executar testes com cobertura
+pytest --cov=app
 
-# Executar com cobertura
-pnpm test:coverage
+# Executar com relatório HTML
+pytest --cov=app --cov-report=html
 ```
 
-Os relatórios de cobertura são gerados em `coverage/lcov-report/index.html`.
+Os relatórios de cobertura são gerados em `htmlcov/index.html`.
 
 ## 📝 Variáveis de Ambiente
 
@@ -175,9 +178,9 @@ HOST=0.0.0.0
 
 O projeto inclui configurações para:
 
-- **ESLint** - Linting de código
-- **Prettier** - Formatação automática
-- **EditorConfig** - Configuração consistente entre editores
+- **ruff** - Linting de código Python
+- **black** - Formatação automática
+- **pytest** - Framework de testes
 
 ## 📊 Monitoramento
 

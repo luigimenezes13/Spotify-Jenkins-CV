@@ -2,8 +2,7 @@ pipeline {
     agent any
     
     environment {
-        NODE_VERSION = '18.18.0'
-        PNPM_VERSION = '8.15.0'
+        PYTHON_VERSION = '3.12'
     }
     
     stages {
@@ -16,21 +15,19 @@ pipeline {
         
         stage('Setup Environment') {
             steps {
-                echo 'Configurando ambiente Node.js e pnpm...'
+                echo 'Configurando ambiente Python...'
                 sh '''
-                    # Instalar Node.js via nvm
-                    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
-                    export NVM_DIR="$HOME/.nvm"
-                    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-                    nvm install ${NODE_VERSION}
-                    nvm use ${NODE_VERSION}
+                    # Instalar Python via pyenv
+                    curl https://pyenv.run | bash
+                    export PYENV_ROOT="$HOME/.pyenv"
+                    export PATH="$PYENV_ROOT/bin:$PATH"
+                    eval "$(pyenv init -)"
+                    pyenv install ${PYTHON_VERSION}
+                    pyenv global ${PYTHON_VERSION}
                     
-                    # Instalar pnpm
-                    npm install -g pnpm@${PNPM_VERSION}
-                    
-                    # Verificar versões
-                    node --version
-                    pnpm --version
+                    # Verificar versão
+                    python --version
+                    pip --version
                 '''
             }
         }
@@ -38,35 +35,45 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 echo 'Instalando dependências...'
-                sh 'pnpm install --frozen-lockfile'
+                sh '''
+                    # Criar ambiente virtual
+                    python -m venv venv
+                    source venv/bin/activate
+                    
+                    # Instalar dependências
+                    pip install --upgrade pip setuptools wheel
+                    pip install -e .[dev]
+                '''
             }
         }
         
         stage('Lint') {
             steps {
                 echo 'Executando linting...'
-                sh 'pnpm run lint'
+                sh '''
+                    source venv/bin/activate
+                    ruff check app/ tests/
+                '''
             }
         }
         
         stage('Format Check') {
             steps {
                 echo 'Verificando formatação...'
-                sh 'pnpm run format:check'
-            }
-        }
-        
-        stage('Type Check') {
-            steps {
-                echo 'Verificando tipos TypeScript...'
-                sh 'pnpm run build'
+                sh '''
+                    source venv/bin/activate
+                    black --check app/ tests/
+                '''
             }
         }
         
         stage('Test') {
             steps {
                 echo 'Executando testes...'
-                sh 'pnpm run test:coverage'
+                sh '''
+                    source venv/bin/activate
+                    pytest --cov=app --cov-report=html --cov-report=term
+                '''
             }
             post {
                 always {
@@ -75,7 +82,7 @@ pipeline {
                         allowMissing: false,
                         alwaysLinkToLastBuild: true,
                         keepAll: true,
-                        reportDir: 'coverage/lcov-report',
+                        reportDir: 'htmlcov',
                         reportFiles: 'index.html',
                         reportName: 'Coverage Report'
                     ])
