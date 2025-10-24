@@ -32,10 +32,26 @@ class SpotifyTrack(BaseModel):
 
 
 class PlaylistCreateRequest(BaseModel):
-    mood: Literal["angry", "disgust", "happy", "neutral", "surprise"]
+    mood: Literal["angry", "disgust", "fear", "happy", "neutral", "sad", "surprise"]
 
 
 class PlaylistCreateResponse(BaseModel):
     playlist_id: str
     playlist_url: str
     tracks: List[SpotifyTrack]
+
+
+class AuthStatus(BaseModel):
+    authenticated: bool
+    user_id: Optional[str] = None
+    display_name: Optional[str] = None
+
+
+class SpotifyAuthCallback(BaseModel):
+    code: str
+    state: Optional[str] = None
+
+
+class AuthUrlResponse(BaseModel):
+    auth_url: str
+    state: str

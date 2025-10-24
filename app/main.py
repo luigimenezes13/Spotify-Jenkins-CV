@@ -15,6 +15,7 @@ from app.api.middlewares.error import (
 )
 from app.api.routes.health import router as health_router
 from app.api.routes.playlist import router as playlist_router
+from app.api.routes.auth import router as auth_router
 
 
 @asynccontextmanager
@@ -37,6 +38,7 @@ setup_cors_middleware(app)
 # Registrar routers
 app.include_router(health_router, prefix="/api", tags=["health"])
 app.include_router(playlist_router, prefix="/api", tags=["playlist"])
+app.include_router(auth_router, prefix="/api", tags=["auth"])
 
 # Rota raiz
 @app.get("/")

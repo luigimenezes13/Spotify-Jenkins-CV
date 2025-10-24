@@ -71,8 +71,8 @@ def mock_httpx_client(monkeypatch):
     """Fixture para mockar httpx.AsyncClient"""
     mock_client = AsyncMock()
     mock_response = AsyncMock()
-    mock_response.json.return_value = {}
-    mock_response.raise_for_status.return_value = None
+    mock_response.json = AsyncMock(return_value={})
+    mock_response.raise_for_status = AsyncMock(return_value=None)
     mock_response.status_code = 200
     mock_client.get.return_value = mock_response
     mock_client.post.return_value = mock_response

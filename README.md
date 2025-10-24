@@ -20,7 +20,8 @@ app/
 ├── api/
 │   ├── routes/          # Routers do FastAPI
 │   │   ├── health.py    # Health check endpoint
-│   │   └── playlist.py  # Playlist por mood endpoint
+│   │   ├── playlist.py  # Playlist por mood endpoint
+│   │   └── auth.py      # Autenticação OAuth 2.0
 │   └── middlewares/     # Middlewares CORS e error
 ├── core/
 │   ├── config.py        # Configurações e env vars
@@ -28,7 +29,8 @@ app/
 ├── models/
 │   └── schemas.py       # Pydantic models (tipos)
 ├── services/
-│   └── spotify_service.py # Integração com Spotify API
+│   ├── spotify_service.py # Integração com Spotify API
+│   └── spotify_auth_service.py # Autenticação OAuth 2.0
 └── main.py              # Aplicação FastAPI principal
 
 tests/                   # Testes unitários e integração
@@ -124,11 +126,33 @@ GET /
 }
 ```
 
+### Autenticação OAuth 2.0
+
+#### Login
+```http
+GET /api/auth/login
+```
+
+#### Callback
+```http
+GET /api/auth/callback?code=AUTHORIZATION_CODE&state=STATE_TOKEN
+```
+
+#### Status de Autenticação
+```http
+GET /api/auth/status?state=STATE_TOKEN
+```
+
+#### Logout
+```http
+POST /api/auth/logout?state=STATE_TOKEN
+```
+
 ## 🎵 Integração com Spotify - Playlist por Mood
 
 ### Visão Geral
 
-Esta funcionalidade permite criar playlists no Spotify baseadas no mood do usuário, utilizando a API de recomendações do Spotify.
+Esta funcionalidade permite criar **playlists reais no Spotify** baseadas no mood do usuário. A aplicação implementa **OAuth 2.0 Authorization Code Flow** para autenticação de usuários e criação de playlists, além de usar busca por gênero para encontrar músicas relevantes (já que o endpoint `/recommendations` foi descontinuado pelo Spotify em novembro de 2024).
 
 ### Configuração do Spotify
 
@@ -137,19 +161,72 @@ Esta funcionalidade permite criar playlists no Spotify baseadas no mood do usuá
 1. Acesse o [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/applications)
 2. Crie uma nova aplicação
 3. Copie o `Client ID` e `Client Secret`
-4. Configure as variáveis de ambiente:
+4. **Configure o Redirect URI**: `http://localhost:3000/api/auth/callback`
+5. Configure as variáveis de ambiente:
 
 ```bash
 # Edite o arquivo .env e adicione suas credenciais
 SPOTIFY_CLIENT_ID=seu_client_id_aqui
 SPOTIFY_CLIENT_SECRET=seu_client_secret_aqui
+SPOTIFY_REDIRECT_URI=http://localhost:3000/api/auth/callback
+```
+
+### Autenticação OAuth 2.0
+
+A aplicação implementa **OAuth 2.0 Authorization Code Flow** para autenticação de usuários:
+
+#### 1. Iniciar Login
+
+```http
+GET /api/auth/login
+```
+
+**Resposta:**
+```json
+{
+  "success": true,
+  "data": {
+    "auth_url": "https://accounts.spotify.com/authorize?client_id=...&response_type=code&redirect_uri=...&scope=playlist-modify-public playlist-modify-private user-read-private&state=...",
+    "state": "unique_state_token"
+  },
+  "message": "Acesse a URL de autorização para fazer login no Spotify"
+}
+```
+
+#### 2. Callback de Autenticação
+
+Após o usuário autorizar no Spotify, ele será redirecionado para:
+```
+http://localhost:3000/api/auth/callback?code=AUTHORIZATION_CODE&state=STATE_TOKEN
+```
+
+#### 3. Verificar Status de Autenticação
+
+```http
+GET /api/auth/status?state=STATE_TOKEN
+```
+
+**Resposta:**
+```json
+{
+  "success": true,
+  "data": {
+    "authenticated": true,
+    "user_id": "spotify_user_id",
+    "display_name": "Nome do Usuário"
+  },
+  "message": "Usuário autenticado"
+}
 ```
 
 ### API Endpoint - Playlist
 
 #### POST `/api/playlist/create`
 
-Cria uma playlist baseada no mood do usuário.
+Cria uma playlist **real no Spotify** baseada no mood do usuário.
+
+**Parâmetros:**
+- `state` (query parameter): Token de estado da autenticação
 
 **Request Body:**
 ```json
@@ -161,27 +238,40 @@ Cria uma playlist baseada no mood do usuário.
 **Moods Suportados:**
 - `angry`: Músicas com alta energia e baixa positividade (rock, metal)
 - `disgust`: Músicas calmas e melancólicas (ambient, experimental)
+- `fear`: Músicas tensas e atmosféricas (dark-ambient, industrial)
 - `happy`: Músicas alegres e dançantes (pop, dance)
 - `neutral`: Músicas equilibradas (indie, alternative)
+- `sad`: Músicas melancólicas e emotivas (blues, soul)
 - `surprise`: Músicas energéticas e variadas (electronic, house)
 
-**Response:**
+**Response (Sucesso):**
 ```json
 {
   "success": true,
   "data": {
-    "playlist_id": "mood_playlist_happy_1234567890",
-    "playlist_url": "https://open.spotify.com/playlist/mood_playlist_happy_1234567890",
+    "playlist_id": "37i9dQZF1DXcBWIGoYBM5M",
+    "playlist_url": "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M",
     "tracks": [
       {
-        "id": "track_id",
-        "name": "Nome da Música",
-        "artists": ["Artista 1", "Artista 2"],
-        "uri": "spotify:track:track_id"
+        "id": "4uUG5RXrOk84mYEfFvj3cK",
+        "name": "I'm Good (Blue)",
+        "artists": ["David Guetta", "Bebe Rexha"],
+        "uri": "spotify:track:4uUG5RXrOk84mYEfFvj3cK"
       }
     ]
   },
-  "message": "Playlist criada com sucesso para o mood: happy"
+  "message": "Playlist criada com sucesso no Spotify para o mood: happy"
+}
+```
+
+**Response (Não Autenticado):**
+```json
+{
+  "detail": {
+    "message": "Usuário não autenticado",
+    "auth_url": "https://accounts.spotify.com/authorize?client_id=...&response_type=code&redirect_uri=...&scope=playlist-modify-public playlist-modify-private user-read-private&state=...",
+    "state": "unique_state_token"
+  }
 }
 ```
 
@@ -189,38 +279,75 @@ Cria uma playlist baseada no mood do usuário.
 
 | Mood    | Valence | Energy | Danceability | Tempo | Gêneros |
 |---------|---------|--------|--------------|-------|---------|
-| angry   | 0.2     | 0.9    | 0.3          | 150   | metal, rock, hardcore |
-| disgust | 0.1     | 0.4    | 0.2          | 100   | ambient, classical, experimental |
-| happy   | 0.9     | 0.8    | 0.8          | 120   | pop, dance, indie-pop |
-| neutral | 0.5     | 0.5    | 0.5          | 110   | indie, alternative, folk |
-| surprise| 0.7     | 0.9    | 0.6          | 140   | electronic, house, trance |
+| angry   | 0.2     | 0.9    | 0.3          | 150   | metal, rock |
+| disgust | 0.1     | 0.4    | 0.2          | 100   | ambient, classical |
+| fear    | 0.2     | 0.6    | 0.3          | 130   | ambient, industrial |
+| happy   | 0.9     | 0.8    | 0.8          | 120   | pop, dance |
+| neutral | 0.5     | 0.5    | 0.5          | 110   | indie, alternative |
+| sad     | 0.2     | 0.3    | 0.2          | 90    | blues, soul |
+| surprise| 0.7     | 0.9    | 0.6          | 140   | electronic, house |
 
-### Exemplo de Uso
+### Exemplo de Uso Completo
 
 ```bash
-# Criar playlist para mood "happy"
-curl -X POST "http://localhost:3000/api/playlist/create" \
+# 1. Obter URL de login
+curl -X GET "http://localhost:3000/api/auth/login"
+
+# 2. Acessar a URL retornada no navegador e fazer login no Spotify
+# 3. Após autorizar, você será redirecionado para o callback
+
+# 4. Verificar status de autenticação
+curl -X GET "http://localhost:3000/api/auth/status?state=SEU_STATE_TOKEN"
+
+# 5. Criar playlist (usando o state retornado no login)
+curl -X POST "http://localhost:3000/api/playlist/create?state=SEU_STATE_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"mood": "happy"}'
+```
+
+### Fluxo Simplificado
+
+```bash
+# Se não estiver autenticado, a API retornará a URL de login automaticamente
+curl -X POST "http://localhost:3000/api/playlist/create?state=test123" \
+  -H "Content-Type: application/json" \
+  -d '{"mood": "happy"}'
+# Resposta: {"detail": {"message": "Usuário não autenticado", "auth_url": "..."}}
 ```
 
 ### Tratamento de Erros
 
 - **400**: Mood inválido ou credenciais não configuradas
-- **403**: Endpoint de recomendações não disponível (restrições da API do Spotify)
+- **401**: Usuário não autenticado (retorna URL de login)
 - **404**: Nenhuma música encontrada para o mood
 - **500**: Erro interno do servidor
 
 ### Observações Importantes
 
-⚠️ **Limitação da API do Spotify**: Em novembro de 2024, o Spotify restringiu o acesso ao endpoint `/recommendations` para alguns desenvolvedores. Se você receber erro 403, isso indica que o endpoint não está disponível para sua aplicação.
+✅ **Solução Implementada**: O endpoint `/recommendations` foi descontinuado pelo Spotify em novembro de 2024. A aplicação agora usa **busca por gênero** para encontrar músicas relevantes baseadas no mood.
+
+✅ **Playlists Reais**: As playlists são criadas **diretamente no Spotify** do usuário autenticado e ficam disponíveis em sua conta.
+
+⚠️ **Configuração Obrigatória**: É necessário configurar o **Redirect URI** no Spotify Developer Dashboard: `http://localhost:3000/api/auth/callback`
 
 ### Arquitetura da Integração
 
-- **`app/services/spotify_service.py`**: Serviço de integração com a API do Spotify
-- **`app/api/routes/playlist.py`**: Rota da API para criação de playlists
+- **`app/services/spotify_service.py`**: Serviço principal com busca de músicas e criação de playlists
+- **`app/services/spotify_auth_service.py`**: Serviço de autenticação OAuth 2.0 Authorization Code Flow
+- **`app/api/routes/playlist.py`**: Rota da API para criação de playlists reais
+- **`app/api/routes/auth.py`**: Rotas de autenticação OAuth 2.0
 - **`app/models/schemas.py`**: Modelos Pydantic para request/response
 - **`app/core/config.py`**: Configurações do Spotify
+
+### Autenticação OAuth 2.0
+
+A aplicação implementa o fluxo **Authorization Code Flow** do OAuth 2.0:
+
+1. **Authorization URL**: Usuário é redirecionado para Spotify para autorização
+2. **Callback**: Spotify redireciona de volta com código de autorização
+3. **Token Exchange**: Código é trocado por access token e refresh token
+4. **Token Management**: Tokens são armazenados e renovados automaticamente
+5. **User Authentication**: Permite criar playlists na conta do usuário
 
 ## 🐳 Docker
 
@@ -284,6 +411,7 @@ HOST=0.0.0.0
 # Obtenha essas credenciais em: https://developer.spotify.com/dashboard/applications
 SPOTIFY_CLIENT_ID=seu_client_id_aqui
 SPOTIFY_CLIENT_SECRET=seu_client_secret_aqui
+SPOTIFY_REDIRECT_URI=http://localhost:3000/api/auth/callback
 ```
 
 ## 🔧 Configuração do Editor
