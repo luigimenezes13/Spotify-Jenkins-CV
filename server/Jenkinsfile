@@ -2,7 +2,7 @@ pipeline {
     agent any
     
     environment {
-        PYTHON_VERSION = '3.12'
+        NODE_VERSION = '20'
     }
     
     stages {
@@ -15,19 +15,22 @@ pipeline {
         
         stage('Setup Environment') {
             steps {
-                echo 'Configurando ambiente Python...'
+                echo 'Configurando ambiente Node.js...'
                 sh '''
-                    # Instalar Python via pyenv
-                    curl https://pyenv.run | bash
-                    export PYENV_ROOT="$HOME/.pyenv"
-                    export PATH="$PYENV_ROOT/bin:$PATH"
-                    eval "$(pyenv init -)"
-                    pyenv install ${PYTHON_VERSION}
-                    pyenv global ${PYTHON_VERSION}
+                    # Instalar Node.js via nvm
+                    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+                    export NVM_DIR="$HOME/.nvm"
+                    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                    nvm install ${NODE_VERSION}
+                    nvm use ${NODE_VERSION}
                     
-                    # Verificar versão
-                    python --version
-                    pip --version
+                    # Instalar pnpm
+                    npm install -g pnpm@latest
+                    
+                    # Verificar versões
+                    node --version
+                    npm --version
+                    pnpm --version
                 '''
             }
         }
@@ -36,13 +39,12 @@ pipeline {
             steps {
                 echo 'Instalando dependências...'
                 sh '''
-                    # Criar ambiente virtual
-                    python -m venv venv
-                    source venv/bin/activate
+                    export NVM_DIR="$HOME/.nvm"
+                    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                    nvm use ${NODE_VERSION}
                     
                     # Instalar dependências
-                    pip install --upgrade pip setuptools wheel
-                    pip install -e .[dev]
+                    pnpm install --frozen-lockfile
                 '''
             }
         }
@@ -51,8 +53,10 @@ pipeline {
             steps {
                 echo 'Executando linting...'
                 sh '''
-                    source venv/bin/activate
-                    ruff check app/ tests/
+                    export NVM_DIR="$HOME/.nvm"
+                    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                    nvm use ${NODE_VERSION}
+                    pnpm run lint:check
                 '''
             }
         }
@@ -61,8 +65,22 @@ pipeline {
             steps {
                 echo 'Verificando formatação...'
                 sh '''
-                    source venv/bin/activate
-                    black --check app/ tests/
+                    export NVM_DIR="$HOME/.nvm"
+                    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                    nvm use ${NODE_VERSION}
+                    pnpm run format:check
+                '''
+            }
+        }
+        
+        stage('Type Check') {
+            steps {
+                echo 'Verificando tipos TypeScript...'
+                sh '''
+                    export NVM_DIR="$HOME/.nvm"
+                    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                    nvm use ${NODE_VERSION}
+                    pnpm run typecheck
                 '''
             }
         }
@@ -71,8 +89,10 @@ pipeline {
             steps {
                 echo 'Executando testes...'
                 sh '''
-                    source venv/bin/activate
-                    pytest --cov=app --cov-report=html --cov-report=term
+                    export NVM_DIR="$HOME/.nvm"
+                    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                    nvm use ${NODE_VERSION}
+                    pnpm run test:cov
                 '''
             }
             post {
@@ -82,11 +102,23 @@ pipeline {
                         allowMissing: false,
                         alwaysLinkToLastBuild: true,
                         keepAll: true,
-                        reportDir: 'htmlcov',
+                        reportDir: 'coverage/lcov-report',
                         reportFiles: 'index.html',
                         reportName: 'Coverage Report'
                     ])
                 }
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                echo 'Compilando aplicação...'
+                sh '''
+                    export NVM_DIR="$HOME/.nvm"
+                    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                    nvm use ${NODE_VERSION}
+                    pnpm run build
+                '''
             }
         }
         

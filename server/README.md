@@ -1,53 +1,60 @@
 # Spotify Jenkins CV - API REST
 
-API REST desenvolvida com Python, FastAPI e pip, preparada para integração com Jenkins CI/CD.
+API REST desenvolvida com TypeScript, NestJS e pnpm, preparada para integração com Jenkins CI/CD.
 
 ## 🚀 Tecnologias
 
-- **Python** 3.12
-- **FastAPI** 0.104+
-- **Pydantic** 2.5+ (validação e serialização)
-- **Uvicorn** (servidor ASGI)
-- **pytest** (testes)
-- **ruff** + **black** (qualidade de código)
+- **Node.js** 20 LTS
+- **TypeScript** 5+
+- **NestJS** 10+ com Fastify adapter
+- **Zod** (validação de schemas)
+- **Winston** (logging)
+- **Jest** (testes)
+- **ESLint** + **Prettier** (qualidade de código)
+- **pnpm** (gerenciador de pacotes)
 - **Docker** (containerização)
 - **Jenkins** (CI/CD)
 
 ## 📁 Estrutura do Projeto
 
 ```
-app/
-├── api/
-│   ├── routes/          # Routers do FastAPI
-│   │   ├── health.py    # Health check endpoint
-│   │   ├── playlist.py  # Playlist por mood endpoint
-│   │   └── auth.py      # Autenticação OAuth 2.0
-│   └── middlewares/     # Middlewares CORS e error
-├── core/
-│   ├── config.py        # Configurações e env vars
-│   └── logging.py       # Logger singleton
-├── models/
-│   └── schemas.py       # Pydantic models (tipos)
-├── services/
-│   ├── spotify_service.py # Integração com Spotify API
-│   └── spotify_auth_service.py # Autenticação OAuth 2.0
-└── main.py              # Aplicação FastAPI principal
+src/
+├── main.ts                    # Entrada da aplicação
+├── app.module.ts              # Módulo raiz
+├── config/
+│   ├── config.module.ts       # Módulo de configuração
+│   └── env.config.ts          # Validação de variáveis de ambiente
+├── common/
+│   ├── filters/               # Exception filters
+│   ├── interceptors/          # Response interceptors
+│   └── dtos/                  # DTOs compartilhados
+├── modules/
+│   ├── health/
+│   │   ├── health.controller.ts
+│   │   └── health.module.ts
+│   ├── spotify/
+│   │   ├── spotify.service.ts
+│   │   └── spotify.module.ts
+│   ├── auth/
+│   │   ├── auth.controller.ts
+│   │   ├── auth.service.ts
+│   │   └── auth.module.ts
+│   └── playlist/
+│       ├── playlist.controller.ts
+│       └── playlist.module.ts
+└── utils/
+    └── logger.ts              # Logger personalizado
 
-tests/                   # Testes unitários e integração
-├── unit/                # Testes unitários
-│   ├── test_schemas.py  # Testes dos schemas Pydantic
-│   └── test_spotify_service.py # Testes do serviço Spotify
-├── test_health.py       # Testes do health endpoint
-├── test_playlist.py     # Testes e2e da playlist
-└── conftest.py          # Fixtures compartilhadas
+dist/                          # Código compilado
+test/                          # Testes (Jest)
 ```
 
 ## 🛠️ Instalação e Desenvolvimento
 
 ### Pré-requisitos
 
-- Python >= 3.12
-- pip
+- Node.js >= 20 LTS
+- pnpm
 
 ### Instalação
 
@@ -56,37 +63,37 @@ tests/                   # Testes unitários e integração
 git clone <repository-url>
 cd spotify-jenkins-cv
 
-# Criar ambiente virtual
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# ou
-venv\Scripts\activate     # Windows
-
 # Instalar dependências
-pip install -e .[dev]
+pnpm install
 
 # Configurar variáveis de ambiente
-cp .env.example .env
+cp env.example .env
 ```
 
 ### Scripts Disponíveis
 
 ```bash
 # Desenvolvimento
-uvicorn app.main:app --reload --host 0.0.0.0 --port 3000
+pnpm run start:dev
 
 # Produção
-uvicorn app.main:app --host 0.0.0.0 --port 3000
+pnpm run start:prod
+
+# Build
+pnpm run build
 
 # Qualidade de código
-ruff check app/ tests/           # Executa linting
-black app/ tests/                # Formata código
-black --check app/ tests/        # Verifica formatação
+pnpm run lint:check              # Executa linting
+pnpm run lint                    # Executa linting e corrige
+pnpm run format:check            # Verifica formatação
+pnpm run format                  # Formata código
+pnpm run typecheck               # Verifica tipos TypeScript
 
 # Testes
-pytest                           # Executa todos os testes
-pytest --cov=app                # Executa testes com cobertura
-pytest --cov=app --cov-report=html  # Gera relatório HTML
+pnpm run test                    # Executa todos os testes
+pnpm run test:watch              # Executa testes em modo watch
+pnpm run test:cov                # Executa testes com cobertura
+pnpm run test:e2e                # Executa testes e2e
 ```
 
 ## 🌐 Endpoints
@@ -121,7 +128,7 @@ GET /
 ```json
 {
   "success": true,
-  "message": "API REST Python + FastAPI está funcionando!",
+  "message": "API REST TypeScript + NestJS está funcionando!",
   "version": "1.0.0"
 }
 ```
@@ -315,6 +322,12 @@ curl -X POST "http://localhost:3000/api/playlist/create?state=test123" \
 # Resposta: {"detail": {"message": "Usuário não autenticado", "auth_url": "..."}}
 ```
 
+### Documentação Swagger
+
+A documentação interativa da API está disponível em:
+- **Desenvolvimento**: http://localhost:3000/api/docs
+- **Produção**: http://localhost:3000/api/docs (se NODE_ENV != production)
+
 ### Tratamento de Erros
 
 - **400**: Mood inválido ou credenciais não configuradas
@@ -332,12 +345,12 @@ curl -X POST "http://localhost:3000/api/playlist/create?state=test123" \
 
 ### Arquitetura da Integração
 
-- **`app/services/spotify_service.py`**: Serviço principal com busca de músicas e criação de playlists
-- **`app/services/spotify_auth_service.py`**: Serviço de autenticação OAuth 2.0 Authorization Code Flow
-- **`app/api/routes/playlist.py`**: Rota da API para criação de playlists reais
-- **`app/api/routes/auth.py`**: Rotas de autenticação OAuth 2.0
-- **`app/models/schemas.py`**: Modelos Pydantic para request/response
-- **`app/core/config.py`**: Configurações do Spotify
+- **`src/modules/spotify/spotify.service.ts`**: Serviço principal com busca de músicas e criação de playlists
+- **`src/modules/auth/auth.service.ts`**: Serviço de autenticação OAuth 2.0 Authorization Code Flow
+- **`src/modules/playlist/playlist.controller.ts`**: Controller da API para criação de playlists reais
+- **`src/modules/auth/auth.controller.ts`**: Controllers de autenticação OAuth 2.0
+- **`src/common/dtos/`**: DTOs e schemas Zod para request/response
+- **`src/config/env.config.ts`**: Configurações do Spotify
 
 ### Autenticação OAuth 2.0
 
@@ -368,13 +381,15 @@ docker run -p 3000:3000 spotify-jenkins-cv
 O projeto inclui um `Jenkinsfile` configurado com pipeline completo:
 
 1. **Checkout** - Clonagem do código
-2. **Setup Environment** - Instalação Python 3.12
-3. **Install Dependencies** - Instalação das dependências
-4. **Lint** - Verificação de qualidade de código com ruff
-5. **Format Check** - Verificação de formatação com black
-6. **Test** - Execução de testes com cobertura
-7. **Build Docker Image** - Construção da imagem Docker
-8. **Deploy** - Deploy automático (staging/produção)
+2. **Setup Environment** - Instalação Node.js 20 via nvm
+3. **Install Dependencies** - Instalação das dependências com pnpm
+4. **Lint** - Verificação de qualidade de código com ESLint
+5. **Format Check** - Verificação de formatação com Prettier
+6. **Type Check** - Verificação de tipos TypeScript
+7. **Test** - Execução de testes com cobertura
+8. **Build** - Compilação da aplicação TypeScript
+9. **Build Docker Image** - Construção da imagem Docker
+10. **Deploy** - Deploy automático (staging/produção)
 
 ### Configuração no Jenkins
 
@@ -387,16 +402,19 @@ O projeto inclui um `Jenkinsfile` configurado com pipeline completo:
 
 ```bash
 # Executar todos os testes
-pytest
+pnpm run test
 
 # Executar testes com cobertura
-pytest --cov=app
+pnpm run test:cov
 
-# Executar com relatório HTML
-pytest --cov=app --cov-report=html
+# Executar testes e2e
+pnpm run test:e2e
+
+# Executar testes em modo watch
+pnpm run test:watch
 ```
 
-Os relatórios de cobertura são gerados em `htmlcov/index.html`.
+Os relatórios de cobertura são gerados em `coverage/lcov-report/index.html`.
 
 ## 📝 Variáveis de Ambiente
 
@@ -418,9 +436,10 @@ SPOTIFY_REDIRECT_URI=http://localhost:3000/api/auth/callback
 
 O projeto inclui configurações para:
 
-- **ruff** - Linting de código Python
-- **black** - Formatação automática
-- **pytest** - Framework de testes
+- **ESLint** - Linting de código TypeScript
+- **Prettier** - Formatação automática
+- **Jest** - Framework de testes
+- **TypeScript** - Verificação de tipos
 
 ## 📊 Monitoramento
 
@@ -435,7 +454,7 @@ O endpoint `/api/health` fornece informações sobre:
 
 ### Logs
 
-A aplicação utiliza um sistema de logging personalizado com níveis:
+A aplicação utiliza Winston para logging com níveis:
 
 - `INFO` - Informações gerais
 - `WARN` - Avisos
