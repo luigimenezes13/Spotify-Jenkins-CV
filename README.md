@@ -19,16 +19,25 @@ API REST desenvolvida com Python, FastAPI e pip, preparada para integração com
 app/
 ├── api/
 │   ├── routes/          # Routers do FastAPI
+│   │   ├── health.py    # Health check endpoint
+│   │   └── playlist.py  # Playlist por mood endpoint
 │   └── middlewares/     # Middlewares CORS e error
 ├── core/
 │   ├── config.py        # Configurações e env vars
 │   └── logging.py       # Logger singleton
 ├── models/
 │   └── schemas.py       # Pydantic models (tipos)
+├── services/
+│   └── spotify_service.py # Integração com Spotify API
 └── main.py              # Aplicação FastAPI principal
 
 tests/                   # Testes unitários e integração
-└── test_*.py           # Arquivos de teste
+├── unit/                # Testes unitários
+│   ├── test_schemas.py  # Testes dos schemas Pydantic
+│   └── test_spotify_service.py # Testes do serviço Spotify
+├── test_health.py       # Testes do health endpoint
+├── test_playlist.py     # Testes e2e da playlist
+└── conftest.py          # Fixtures compartilhadas
 ```
 
 ## 🛠️ Instalação e Desenvolvimento
@@ -115,6 +124,104 @@ GET /
 }
 ```
 
+## 🎵 Integração com Spotify - Playlist por Mood
+
+### Visão Geral
+
+Esta funcionalidade permite criar playlists no Spotify baseadas no mood do usuário, utilizando a API de recomendações do Spotify.
+
+### Configuração do Spotify
+
+#### 1. Credenciais do Spotify
+
+1. Acesse o [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/applications)
+2. Crie uma nova aplicação
+3. Copie o `Client ID` e `Client Secret`
+4. Configure as variáveis de ambiente:
+
+```bash
+# Edite o arquivo .env e adicione suas credenciais
+SPOTIFY_CLIENT_ID=seu_client_id_aqui
+SPOTIFY_CLIENT_SECRET=seu_client_secret_aqui
+```
+
+### API Endpoint - Playlist
+
+#### POST `/api/playlist/create`
+
+Cria uma playlist baseada no mood do usuário.
+
+**Request Body:**
+```json
+{
+  "mood": "happy"
+}
+```
+
+**Moods Suportados:**
+- `angry`: Músicas com alta energia e baixa positividade (rock, metal)
+- `disgust`: Músicas calmas e melancólicas (ambient, experimental)
+- `happy`: Músicas alegres e dançantes (pop, dance)
+- `neutral`: Músicas equilibradas (indie, alternative)
+- `surprise`: Músicas energéticas e variadas (electronic, house)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "playlist_id": "mood_playlist_happy_1234567890",
+    "playlist_url": "https://open.spotify.com/playlist/mood_playlist_happy_1234567890",
+    "tracks": [
+      {
+        "id": "track_id",
+        "name": "Nome da Música",
+        "artists": ["Artista 1", "Artista 2"],
+        "uri": "spotify:track:track_id"
+      }
+    ]
+  },
+  "message": "Playlist criada com sucesso para o mood: happy"
+}
+```
+
+### Características de Áudio por Mood
+
+| Mood    | Valence | Energy | Danceability | Tempo | Gêneros |
+|---------|---------|--------|--------------|-------|---------|
+| angry   | 0.2     | 0.9    | 0.3          | 150   | metal, rock, hardcore |
+| disgust | 0.1     | 0.4    | 0.2          | 100   | ambient, classical, experimental |
+| happy   | 0.9     | 0.8    | 0.8          | 120   | pop, dance, indie-pop |
+| neutral | 0.5     | 0.5    | 0.5          | 110   | indie, alternative, folk |
+| surprise| 0.7     | 0.9    | 0.6          | 140   | electronic, house, trance |
+
+### Exemplo de Uso
+
+```bash
+# Criar playlist para mood "happy"
+curl -X POST "http://localhost:3000/api/playlist/create" \
+  -H "Content-Type: application/json" \
+  -d '{"mood": "happy"}'
+```
+
+### Tratamento de Erros
+
+- **400**: Mood inválido ou credenciais não configuradas
+- **403**: Endpoint de recomendações não disponível (restrições da API do Spotify)
+- **404**: Nenhuma música encontrada para o mood
+- **500**: Erro interno do servidor
+
+### Observações Importantes
+
+⚠️ **Limitação da API do Spotify**: Em novembro de 2024, o Spotify restringiu o acesso ao endpoint `/recommendations` para alguns desenvolvedores. Se você receber erro 403, isso indica que o endpoint não está disponível para sua aplicação.
+
+### Arquitetura da Integração
+
+- **`app/services/spotify_service.py`**: Serviço de integração com a API do Spotify
+- **`app/api/routes/playlist.py`**: Rota da API para criação de playlists
+- **`app/models/schemas.py`**: Modelos Pydantic para request/response
+- **`app/core/config.py`**: Configurações do Spotify
+
 ## 🐳 Docker
 
 ### Build da imagem
@@ -172,6 +279,11 @@ Crie um arquivo `.env` na raiz do projeto:
 NODE_ENV=development
 PORT=3000
 HOST=0.0.0.0
+
+# Spotify API Configuration
+# Obtenha essas credenciais em: https://developer.spotify.com/dashboard/applications
+SPOTIFY_CLIENT_ID=seu_client_id_aqui
+SPOTIFY_CLIENT_SECRET=seu_client_secret_aqui
 ```
 
 ## 🔧 Configuração do Editor

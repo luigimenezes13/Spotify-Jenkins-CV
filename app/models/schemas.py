@@ -1,4 +1,4 @@
-from typing import Generic, TypeVar, Optional
+from typing import Generic, TypeVar, Optional, Literal, List
 from pydantic import BaseModel
 
 T = TypeVar('T')
@@ -22,3 +22,20 @@ class ErrorResponse(BaseModel):
     success: bool = False
     error: str
     message: Optional[str] = None
+
+
+class SpotifyTrack(BaseModel):
+    id: str
+    name: str
+    artists: List[str]
+    uri: str
+
+
+class PlaylistCreateRequest(BaseModel):
+    mood: Literal["angry", "disgust", "happy", "neutral", "surprise"]
+
+
+class PlaylistCreateResponse(BaseModel):
+    playlist_id: str
+    playlist_url: str
+    tracks: List[SpotifyTrack]

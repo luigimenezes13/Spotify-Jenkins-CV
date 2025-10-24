@@ -14,6 +14,7 @@ from app.api.middlewares.error import (
     not_found_handler
 )
 from app.api.routes.health import router as health_router
+from app.api.routes.playlist import router as playlist_router
 
 
 @asynccontextmanager
@@ -35,6 +36,7 @@ setup_cors_middleware(app)
 
 # Registrar routers
 app.include_router(health_router, prefix="/api", tags=["health"])
+app.include_router(playlist_router, prefix="/api", tags=["playlist"])
 
 # Rota raiz
 @app.get("/")
