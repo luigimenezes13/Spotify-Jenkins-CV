@@ -68,8 +68,10 @@ docker logs jenkins-server
 1. Na seção "Pipeline":
    - **Definition**: "Pipeline script from SCM"
    - **SCM**: Git
-   - **Repository URL**: `/home/luigimenezes/estudos/cv/PUCC/Spotify-Jenkins-CV`
-   - **Script Path**: `Jenkinsfile`
+   - **Repository URL**: `https://github.com/luigimenezes13/Spotify-Jenkins-CV.git`
+   - **Credentials**: Deixe vazio (para repositório público) ou configure credenciais se for privado
+   - **Branch**: `*/main` ou `*/master` (dependendo da sua branch principal)
+   - **Script Path**: `server/Jenkinsfile`
 2. Clique em "Save"
 
 ### 5. Executar Pipeline
@@ -161,13 +163,95 @@ docker exec jenkins-server tail -f /var/jenkins_home/logs/jenkins.log
 - Verifique histórico de builds
 - Analise relatórios de cobertura
 
+## 🔄 Configurar Build Automático
+
+### Opção 1: Polling (Já configurado no Jenkinsfile)
+
+O Jenkinsfile já está configurado com polling que verifica mudanças a cada 5 minutos:
+```groovy
+triggers {
+    pollSCM('H/5 * * * *')
+}
+```
+
+**Como funciona:**
+- O Jenkins verifica o repositório a cada 5 minutos
+- Se houver mudanças, executa o pipeline automaticamente
+- **Vantagem**: Simples, não precisa configuração adicional
+- **Desvantagem**: Pode haver delay de até 5 minutos
+
+**Após fazer commit e push:**
+1. Faça commit das mudanças: `git commit -am "Atualizar código"`
+2. Faça push: `git push origin main`
+3. Aguarde até 5 minutos - o Jenkins executará automaticamente
+
+### Opção 2: GitHub Webhooks (Recomendado - Mais Rápido)
+
+Para builds instantâneos ao fazer push, configure webhooks:
+
+#### 2.1 Configurar no Jenkins
+
+1. **Instalar Plugin GitHub** (se ainda não tiver):
+   - Jenkins → Manage Jenkins → Manage Plugins
+   - Aba "Available"
+   - Busque "GitHub plugin"
+   - Instale e reinicie
+
+2. **Configurar o Job:**
+   - Vá em: `spotify-jenkins-cv` → Configure
+   - Na seção "Build Triggers":
+     - ✅ Marque "GitHub hook trigger for GITScm polling"
+   - Salve
+
+#### 2.2 Configurar no GitHub
+
+1. Acesse seu repositório no GitHub
+2. Vá em: **Settings** → **Webhooks** → **Add webhook**
+3. Configure:
+   - **Payload URL**: `http://SEU_IP_JENKINS:8080/github-webhook/`
+     - Se Jenkins estiver local: `http://localhost:8080/github-webhook/` (não funciona do GitHub)
+     - Se Jenkins estiver em servidor público: `http://seu-ip-publico:8080/github-webhook/`
+   - **Content type**: `application/json`
+   - **Events**: Selecione "Just the push event"
+   - ✅ Active
+4. Clique em "Add webhook"
+
+#### 2.3 Tornar Jenkins Acessível (se necessário)
+
+Se o Jenkins estiver rodando localmente, o GitHub não conseguirá acessá-lo. Opções:
+
+**A) Usar ngrok (para testes):**
+```bash
+# Instalar ngrok
+curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
+echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list
+sudo apt update && sudo apt install ngrok
+
+# Criar tunnel
+ngrok http 8080
+
+# Use a URL do ngrok no webhook do GitHub
+# Exemplo: https://abc123.ngrok.io/github-webhook/
+```
+
+**B) Usar Polling (mais simples para desenvolvimento local):**
+- O polling já está configurado no Jenkinsfile
+- Funciona sem configuração adicional
+- Delay máximo de 5 minutos
+
+### Comparação das Opções
+
+| Método | Velocidade | Configuração | Recomendado Para |
+|--------|-----------|--------------|------------------|
+| **Polling** | ~5 min delay | ✅ Já configurado | Desenvolvimento local |
+| **Webhook** | Instantâneo | ⚠️ Requer setup | Produção/Servidor público |
+
 ## 🎯 Próximos Passos
 
-1. **Configurar Webhooks** para build automático
-2. **Integrar com GitHub** (se aplicável)
-3. **Configurar Deploy** para staging/produção
-4. **Adicionar Notificações** (email, Slack)
-5. **Configurar Backup** dos dados do Jenkins
+1. ✅ **Build Automático** - Configurado com polling
+2. **Configurar Deploy** para staging/produção
+3. **Adicionar Notificações** (email, Slack)
+4. **Configurar Backup** dos dados do Jenkins
 
 ## 📚 Recursos Úteis
 
