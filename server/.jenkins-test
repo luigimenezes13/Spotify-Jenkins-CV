@@ -1,0 +1,5 @@
+# Arquivo de teste para verificar se Jenkins detecta commits automaticamente
+# Este arquivo pode ser deletado após o teste
+
+Timestamp: $(date)
+
