@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { createZodDto } from 'nestjs-zod';
+import { IsEnum } from 'class-validator';
 
 export const SpotifyTrackSchema = z.object({
   id: z.string(),
@@ -19,5 +20,8 @@ export const PlaylistCreateResponseSchema = z.object({
 });
 
 export class SpotifyTrackDto extends createZodDto(SpotifyTrackSchema) {}
-export class PlaylistCreateRequestDto extends createZodDto(PlaylistCreateRequestSchema) {}
+export class PlaylistCreateRequestDto extends createZodDto(PlaylistCreateRequestSchema) {
+  @IsEnum(['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise'])
+  mood: 'angry' | 'disgust' | 'fear' | 'happy' | 'neutral' | 'sad' | 'surprise';
+}
 export class PlaylistCreateResponseDto extends createZodDto(PlaylistCreateResponseSchema) {}

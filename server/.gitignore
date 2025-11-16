@@ -119,33 +119,33 @@ public
 Thumbs.db
 
 # Git
+# NOTE: .gitignore should be in repository
 .git/
-.gitignore
 
 # Docker
-Dockerfile
-.dockerignore
-docker-compose.yml
-docker-compose.yaml
+# NOTE: Keep Dockerfile, docker-compose.yml in repository
+# Only ignore local docker config if needed
+# .dockerignore
 
 # CI/CD
-.github/
-.gitlab-ci.yml
-Jenkinsfile
+# NOTE: Keep Jenkinsfile and CI config in repository
+# .github/ (keep CI workflows)
 
 # Documentation
-README.md
-docs/
-*.md
+# NOTE: Keep README.md and documentation in repository
+# Only ignore generated docs if applicable
+# docs/_build/
 
 # Test files
-test/
-tests/
-__tests__/
-*.test.ts
-*.spec.ts
-*.test.js
-*.spec.js
+# NOTE: Keep test files in repository
+# Only ignore test output/coverage
+# test/
+# tests/
+# __tests__/
+# *.test.ts
+# *.spec.ts
+# *.test.js
+# *.spec.js
 
 # Logs
 logs/

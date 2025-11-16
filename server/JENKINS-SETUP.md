@@ -64,7 +64,20 @@ docker logs jenkins-server
 3. Selecione "Pipeline"
 4. Clique em "OK"
 
-#### 4.2 Configurar Pipeline
+#### 4.2 Configurar Git Global (IMPORTANTE!)
+
+**⚠️ ANTES de configurar o Pipeline, configure o Git globalmente:**
+
+1. Vá em: **Manage Jenkins** → **Tools** (ou **Global Tool Configuration**)
+2. Encontre a seção **"Git"**
+3. Clique em **"Add Git"**
+4. **IMPORTANTE**: Deixe o campo **"Path to Git executable"** **VAZIO** (isso fará o Jenkins usar o Git padrão do container Docker)
+5. Clique em **"Save"**
+
+**Por que isso é importante?**  
+O Jenkins pode tentar usar o Git do Windows (`C:\Program Files\Git\cmd\git.exe`) dentro do container Docker Linux, o que causa erro. Deixar o campo vazio faz o Jenkins usar o Git instalado no container (`/usr/bin/git`).
+
+#### 4.3 Configurar Pipeline
 1. Na seção "Pipeline":
    - **Definition**: "Pipeline script from SCM"
    - **SCM**: Git
@@ -122,6 +135,32 @@ docker stop jenkins-server && docker rm jenkins-server
 
 ## 🔧 Troubleshooting
 
+### Erro: "Failed to connect to repository" com Git do Windows
+
+**Erro:**
+```
+Failed to connect to repository : Error performing git command: 
+C:\Program Files\Git\cmd\git.exe ls-remote -h https://github.com/...
+```
+
+**Solução:**
+1. Vá em: **Manage Jenkins** → **Tools** (ou **Global Tool Configuration**)
+2. Encontre a seção **"Git"**
+3. Clique em **"Add Git"** ou edite a configuração existente
+4. **IMPORTANTE**: Deixe o campo **"Path to Git executable"** **VAZIO**
+5. Clique em **"Save"**
+6. Reconfigure o pipeline novamente
+
+**Por que isso acontece?**  
+O Jenkins está tentando usar o Git do Windows dentro do container Docker Linux. Deixar o campo vazio faz o Jenkins usar o Git instalado no container (`/usr/bin/git`).
+
+**Verificação:**
+```bash
+# Testar Git dentro do container
+docker exec jenkins-server git --version
+docker exec jenkins-server git ls-remote -h https://github.com/luigimenezes13/Spotify-Jenkins-CV.git HEAD
+```
+
 ### Jenkins não inicia
 ```bash
 # Reiniciar container
@@ -132,19 +171,19 @@ docker logs jenkins-server -f
 ```
 
 ### Pipeline falha
-1. Verificar se Python 3.12 está disponível
+1. Verificar se Node.js 20 está disponível (o pipeline instala via nvm)
 2. Verificar se dependências estão instaladas
 3. Verificar permissões de arquivo
 4. Verificar logs do build
 
 ### Problemas de Porta
 ```bash
-# Verificar portas em uso
-ss -tlnp | grep :8080
-ss -tlnp | grep :50000
+# Verificar portas em uso (Windows PowerShell)
+netstat -ano | findstr :8080
+netstat -ano | findstr :50000
 
-# Parar outros serviços se necessário
-sudo lsof -ti:8080 | xargs kill -9
+# Parar processo se necessário (substitua PID pelo número do processo)
+taskkill /PID <PID> /F
 ```
 
 ## 📊 Monitoramento

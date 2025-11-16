@@ -86,10 +86,12 @@ def use_auth():
         finally:
             set_loading(False)
 
-    def handle_callback(state: str):
+    async def handle_callback(state: str):
+        if not state:
+            return
         store_state(state)
         set_state_token(state)
-        check_auth_status()
+        await check_auth_status()
 
     return {
         "is_authenticated": is_authenticated,

@@ -1,7 +1,7 @@
 from reactpy import component, html, use_state
 from ..Button.Button import Button
 from typing import Dict, Any
-import asyncio
+import json
 
 
 @component
@@ -11,34 +11,32 @@ def Hero(auth: Dict[str, Any]):
     loading = auth.get("loading", False)
     auth_url, set_auth_url = use_state("")
 
-    def handle_cta(event):
+    async def handle_cta(event):
         if not is_authenticated and login_fn:
-            async def do_login():
-                try:
-                    result = await login_fn()
-                    if result and result.get("redirect"):
-                        redirect_url = result["redirect"]
-                        set_auth_url(redirect_url)
-                except Exception as e:
-                    print(f"Erro no login: {e}")
-            
             try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    asyncio.create_task(do_login())
-                else:
-                    loop.run_until_complete(do_login())
-            except RuntimeError:
-                asyncio.create_task(do_login())
+                result = await login_fn()
+                if result and result.get("redirect"):
+                    redirect_url = result["redirect"]
+                    set_auth_url(redirect_url)
+            except Exception as e:
+                print(f"Erro no login: {e}")
 
 
     if auth_url and auth_url != "":
+        script_content = (
+            "(function(){"
+            f"var url = {json.dumps(auth_url)};"
+            "window.location.href = url;"
+            "})();"
+        )
+
         return html.div(
+            {"class_name": "auth-redirect"},
+            html.p("Abrindo autenticação do Spotify..."),
             html.script(
                 {"type": "text/javascript"},
-                f"(function(){{ setTimeout(function(){{ window.location.replace('{auth_url}'); }}, 100); }})();"
+                script_content,
             ),
-            html.p("Redirecionando para Spotify...")
         )
 
     return html.section(

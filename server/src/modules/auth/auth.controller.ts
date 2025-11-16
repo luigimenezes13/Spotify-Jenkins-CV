@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Query, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Query,
+  HttpException,
+  HttpStatus,
+  Res,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { randomBytes } from 'crypto';
 import { AuthService } from './auth.service';
@@ -6,6 +14,7 @@ import { AuthStatusDto, AuthUrlResponseDto } from '@/common/dtos';
 import { Logger } from '@/utils/logger';
 import { ConfigService } from '@nestjs/config';
 import { EnvConfig } from '@/config/env.config';
+import { FastifyReply } from 'fastify';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -95,11 +104,15 @@ export class AuthController {
   async callback(
     @Query('code') code: string,
     @Query('state') state: string,
-  ): Promise<{
-    success: boolean;
-    data: AuthStatusDto;
-    message: string;
-  }> {
+    @Res() reply: FastifyReply,
+  ): Promise<
+    | {
+        success: boolean;
+        data: AuthStatusDto;
+        message: string;
+      }
+    | void
+  > {
     try {
       const tokenData = await this.authService.exchangeCodeForToken(code, state);
       const userData = await this.authService.getCurrentUser(tokenData.access_token);
@@ -112,6 +125,49 @@ export class AuthController {
       };
 
       this.logger.info(`Usuário autenticado com sucesso: ${authStatus.display_name}`);
+
+      const frontendUrl =
+        this.configService.get('FRONTEND_URL', { infer: true }) ?? 'http://127.0.0.1:8000';
+
+      if (reply && frontendUrl) {
+        const redirectUrl = new URL(frontendUrl);
+        redirectUrl.searchParams.set('auth_status', 'success');
+        redirectUrl.searchParams.set('state', state);
+
+        reply.type('text/html').send(`
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Moodify | Autenticação</title>
+    <style>
+      body { font-family: Arial, sans-serif; background-color: #121212; color: #fff; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+      .card { text-align: center; padding: 2rem; border-radius: 12px; background: #1f1f1f; box-shadow: 0 15px 35px rgba(0,0,0,0.35); }
+      h1 { margin-bottom: 0.5rem; color: #1db954; }
+      p { margin: 0.25rem 0; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Autenticação realizada!</h1>
+      <p>Você será redirecionado de volta para o Moodify automaticamente.</p>
+      <p>Se nada acontecer, <a href="${redirectUrl.toString()}" style="color:#1db954;">clique aqui</a>.</p>
+    </div>
+    <script>
+      (function(){
+        try {
+          const url = new URL(${JSON.stringify(redirectUrl.toString())});
+          window.location.replace(url.toString());
+        } catch (err) {
+          console.error('Erro ao redirecionar:', err);
+        }
+      })();
+    </script>
+  </body>
+</html>`);
+
+        return;
+      }
 
       return {
         success: true,

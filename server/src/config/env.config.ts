@@ -5,6 +5,7 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(3000),
   HOST: z.string().default('0.0.0.0'),
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
+  FRONTEND_URL: z.string().default('http://127.0.0.1:8000'),
   
   // Spotify API Configuration
   SPOTIFY_CLIENT_ID: z.string().optional(),

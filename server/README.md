@@ -424,6 +424,7 @@ Crie um arquivo `.env` na raiz do projeto:
 NODE_ENV=development
 PORT=3000
 HOST=0.0.0.0
+FRONTEND_URL=http://127.0.0.1:8000
 
 # Spotify API Configuration
 # Obtenha essas credenciais em: https://developer.spotify.com/dashboard/applications

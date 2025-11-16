@@ -1,6 +1,7 @@
 from reactpy import component, html, use_state
 from ..Button.Button import Button
-from typing import Dict, Any, Optional
+from typing import Dict, Any
+import json
 
 
 @component
@@ -24,12 +25,20 @@ def Header(auth: Dict[str, Any]):
 
 
     if auth_url and auth_url != "":
+        script_content = (
+            "(function(){"
+            f"var url = {json.dumps(auth_url)};"
+            "window.location.href = url;"
+            "})();"
+        )
+
         return html.div(
+            {"class_name": "auth-redirect"},
+            html.p("Abrindo autenticação do Spotify..."),
             html.script(
                 {"type": "text/javascript"},
-                f"(function(){{ setTimeout(function(){{ window.location.replace('{auth_url}'); }}, 100); }})();"
+                script_content,
             ),
-            html.p("Redirecionando para Spotify...")
         )
 
     def handle_logout(event):
