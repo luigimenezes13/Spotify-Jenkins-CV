@@ -224,6 +224,40 @@ triggers {
 2. Faça push: `git push origin main`
 3. Aguarde até 5 minutos - o Jenkins executará automaticamente
 
+**Como verificar se está funcionando:**
+1. Acesse: http://localhost:8080/job/spotify-jenkins-cv/
+2. Verifique o histórico de builds (história à esquerda)
+3. Veja a coluna "Commit" - deve mostrar o commit mais recente
+4. Se houver um novo build, clique nele para ver os logs
+5. Verifique os logs para confirmar que detectou o commit
+
+**⚠️ IMPORTANTE - Poll SCM Pode Precisar Ser Habilitado Manualmente:**
+O `pollSCM` no Jenkinsfile pode não ser aplicado automaticamente. Você precisa habilitar manualmente no Jenkins UI:
+
+1. Acesse: `spotify-jenkins-cv` → **Configure**
+2. Seção **"Build Triggers"** → ✅ **Marque "Poll SCM"**
+3. Schedule: `H/5 * * * *`
+4. Clique em **"Save"**
+
+**Verifique após configurar:**
+- Vá em **"View Polling Log"** ou **"GitHub Hook Log"**
+- Deve mostrar logs de polling sendo executado
+
+**Teste rápido:**
+```bash
+# 1. Fazer um pequeno commit de teste
+echo "# Teste" >> server/.test-jenkins
+git add server/.test-jenkins
+git commit -m "test: verificar build automático do Jenkins"
+git push origin main
+
+# 2. Aguardar até 5 minutos
+
+# 3. Verificar no Jenkins UI se novo build foi criado
+# ou verificar logs:
+docker logs jenkins-server 2>&1 | grep -i "poll\|scm\|checkout\|trigger" | tail -10
+```
+
 ### Opção 2: GitHub Webhooks (Recomendado - Mais Rápido)
 
 Para builds instantâneos ao fazer push, configure webhooks:
