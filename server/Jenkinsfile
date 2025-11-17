@@ -26,7 +26,7 @@ pipeline {
                         # Instalar Node.js via nvm
                         curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
                         export NVM_DIR="$HOME/.nvm"
-                        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                        [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
                         nvm install ${NODE_VERSION}
                         nvm use ${NODE_VERSION}
                         
@@ -48,7 +48,7 @@ pipeline {
                 dir("${WORKSPACE_DIR}") {
                     sh '''
                         export NVM_DIR="$HOME/.nvm"
-                        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                        [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
                         nvm use ${NODE_VERSION}
                         
                         # Instalar dependências
@@ -64,7 +64,7 @@ pipeline {
                 dir("${WORKSPACE_DIR}") {
                     sh '''
                         export NVM_DIR="$HOME/.nvm"
-                        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                        [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
                         nvm use ${NODE_VERSION}
                         pnpm run lint:check
                     '''
@@ -78,7 +78,7 @@ pipeline {
                 dir("${WORKSPACE_DIR}") {
                     sh '''
                         export NVM_DIR="$HOME/.nvm"
-                        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                        [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
                         nvm use ${NODE_VERSION}
                         pnpm run format:check
                     '''
@@ -92,7 +92,7 @@ pipeline {
                 dir("${WORKSPACE_DIR}") {
                     sh '''
                         export NVM_DIR="$HOME/.nvm"
-                        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                        [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
                         nvm use ${NODE_VERSION}
                         pnpm run typecheck
                     '''
@@ -106,7 +106,7 @@ pipeline {
                 dir("${WORKSPACE_DIR}") {
                     sh '''
                         export NVM_DIR="$HOME/.nvm"
-                        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                        [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
                         nvm use ${NODE_VERSION}
                         pnpm run test:cov
                     '''
@@ -148,7 +148,7 @@ pipeline {
                 dir("${WORKSPACE_DIR}") {
                     sh '''
                         export NVM_DIR="$HOME/.nvm"
-                        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                        [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
                         nvm use ${NODE_VERSION}
                         pnpm run build
                         
