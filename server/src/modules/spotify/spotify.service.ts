@@ -6,7 +6,14 @@ import { SpotifyTrackDto } from '@/common/dtos';
 import { EnvConfig } from '@/config/env.config';
 import { getErrorStatus } from '@/common/types/axios-error.types';
 
-type MoodType = 'angry' | 'disgust' | 'fear' | 'happy' | 'neutral' | 'sad' | 'surprise';
+type MoodType =
+  | 'angry'
+  | 'disgust'
+  | 'fear'
+  | 'happy'
+  | 'neutral'
+  | 'sad'
+  | 'surprise';
 
 interface MoodMapping {
   valence: number;
@@ -70,14 +77,20 @@ export class SpotifyService {
       return this.accessToken;
     }
 
-    const clientId = this.configService.get('SPOTIFY_CLIENT_ID', { infer: true });
-    const clientSecret = this.configService.get('SPOTIFY_CLIENT_SECRET', { infer: true });
+    const clientId = this.configService.get('SPOTIFY_CLIENT_ID', {
+      infer: true,
+    });
+    const clientSecret = this.configService.get('SPOTIFY_CLIENT_SECRET', {
+      infer: true,
+    });
 
     if (!clientId || !clientSecret) {
       throw new Error('Spotify client credentials não configuradas');
     }
 
-    const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+    const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString(
+      'base64',
+    );
 
     try {
       const response = await axios.post(
@@ -94,7 +107,9 @@ export class SpotifyService {
       this.accessToken = response.data.access_token;
       this.tokenExpiresAt = Date.now() + (response.data.expires_in - 60) * 1000;
 
-      this.logger.info('Token de acesso do Spotify obtido com sucesso usando OAuth 2.0');
+      this.logger.info(
+        'Token de acesso do Spotify obtido com sucesso usando OAuth 2.0',
+      );
       return this.accessToken;
     } catch (error) {
       this.logger.error('Erro ao obter token do Spotify', error);
@@ -103,7 +118,10 @@ export class SpotifyService {
     }
   }
 
-  async getRecommendations(mood: MoodType, limit: number = 20): Promise<SpotifyTrackDto[]> {
+  async getRecommendations(
+    mood: MoodType,
+    limit: number = 20,
+  ): Promise<SpotifyTrackDto[]> {
     if (!(mood in this.moodMapping)) {
       throw new Error(`Mood inválido: ${mood}`);
     }
@@ -118,17 +136,20 @@ export class SpotifyService {
           break;
         }
 
-        const response = await this.httpClient.get<SpotifySearchResponse>('/search', {
-          params: {
-            q: query,
-            type: 'track',
-            limit: Math.min(10, limit - tracks.length),
-            market: 'BR',
+        const response = await this.httpClient.get<SpotifySearchResponse>(
+          '/search',
+          {
+            params: {
+              q: query,
+              type: 'track',
+              limit: Math.min(10, limit - tracks.length),
+              market: 'BR',
+            },
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           },
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        );
 
         for (const track of response.data.tracks.items) {
           if (tracks.length >= limit) {
@@ -155,13 +176,48 @@ export class SpotifyService {
 
   private getSearchQueries(mood: MoodType): string[] {
     const searchQueriesMapping: Record<MoodType, string[]> = {
-      angry: ['genre:metal', 'genre:rock', 'year:2020-2024 metal', 'year:2020-2024 rock'],
-      disgust: ['genre:ambient', 'genre:classical', 'year:2020-2024 ambient', 'year:2020-2024 classical'],
-      fear: ['genre:ambient', 'genre:industrial', 'year:2020-2024 ambient', 'year:2020-2024 industrial'],
-      happy: ['genre:pop', 'genre:dance', 'year:2020-2024 pop', 'year:2020-2024 dance'],
-      neutral: ['genre:indie', 'genre:alternative', 'year:2020-2024 indie', 'year:2020-2024 alternative'],
-      sad: ['genre:blues', 'genre:soul', 'year:2020-2024 blues', 'year:2020-2024 soul'],
-      surprise: ['genre:electronic', 'genre:house', 'year:2020-2024 electronic', 'year:2020-2024 house'],
+      angry: [
+        'genre:metal',
+        'genre:rock',
+        'year:2020-2024 metal',
+        'year:2020-2024 rock',
+      ],
+      disgust: [
+        'genre:ambient',
+        'genre:classical',
+        'year:2020-2024 ambient',
+        'year:2020-2024 classical',
+      ],
+      fear: [
+        'genre:ambient',
+        'genre:industrial',
+        'year:2020-2024 ambient',
+        'year:2020-2024 industrial',
+      ],
+      happy: [
+        'genre:pop',
+        'genre:dance',
+        'year:2020-2024 pop',
+        'year:2020-2024 dance',
+      ],
+      neutral: [
+        'genre:indie',
+        'genre:alternative',
+        'year:2020-2024 indie',
+        'year:2020-2024 alternative',
+      ],
+      sad: [
+        'genre:blues',
+        'genre:soul',
+        'year:2020-2024 blues',
+        'year:2020-2024 soul',
+      ],
+      surprise: [
+        'genre:electronic',
+        'genre:house',
+        'year:2020-2024 electronic',
+        'year:2020-2024 house',
+      ],
     };
 
     return searchQueriesMapping[mood] || ['genre:pop', 'year:2020-2024 pop'];
@@ -175,7 +231,9 @@ export class SpotifyService {
         },
       });
 
-      this.logger.info(`Informações do usuário obtidas: ${response.data.display_name || 'N/A'}`);
+      this.logger.info(
+        `Informações do usuário obtidas: ${response.data.display_name || 'N/A'}`,
+      );
       return response.data;
     } catch (error) {
       this.logger.error('Erro ao obter usuário', error);
@@ -207,7 +265,9 @@ export class SpotifyService {
         },
       );
 
-      this.logger.info(`Playlist criada com sucesso: ${response.data.id} - ${response.data.name}`);
+      this.logger.info(
+        `Playlist criada com sucesso: ${response.data.id} - ${response.data.name}`,
+      );
       return response.data;
     } catch (error) {
       this.logger.error('Erro ao criar playlist', error);
@@ -216,7 +276,11 @@ export class SpotifyService {
     }
   }
 
-  async addTracksToPlaylist(userToken: string, playlistId: string, trackUris: string[]): Promise<unknown> {
+  async addTracksToPlaylist(
+    userToken: string,
+    playlistId: string,
+    trackUris: string[],
+  ): Promise<unknown> {
     try {
       const response = await this.httpClient.post(
         `/playlists/${playlistId}/tracks`,
@@ -231,7 +295,9 @@ export class SpotifyService {
         },
       );
 
-      this.logger.info(`Adicionadas ${trackUris.length} tracks à playlist ${playlistId}`);
+      this.logger.info(
+        `Adicionadas ${trackUris.length} tracks à playlist ${playlistId}`,
+      );
       return response.data;
     } catch (error) {
       this.logger.error('Erro ao adicionar tracks à playlist', error);

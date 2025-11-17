@@ -1,4 +1,9 @@
-import { createLogger, format, transports, Logger as WinstonLogger } from 'winston';
+import {
+  createLogger,
+  format,
+  transports,
+  Logger as WinstonLogger,
+} from 'winston';
 import { ConfigService } from '@nestjs/config';
 import { EnvConfig } from '@/config/env.config';
 
@@ -66,9 +71,17 @@ class Logger {
     this.winstonLogger.info(message, meta);
   }
 
-  public error(message: string, error?: Error | unknown, meta?: Record<string, unknown>): void {
+  public error(
+    message: string,
+    error?: Error | unknown,
+    meta?: Record<string, unknown>,
+  ): void {
     if (error instanceof Error) {
-      this.winstonLogger.error(message, { error: error.message, stack: error.stack, ...meta });
+      this.winstonLogger.error(message, {
+        error: error.message,
+        stack: error.stack,
+        ...meta,
+      });
     } else {
       this.winstonLogger.error(message, { error, ...meta });
     }

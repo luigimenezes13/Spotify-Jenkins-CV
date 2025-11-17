@@ -1,5 +1,8 @@
 import { NestFactory } from '@nestjs/core';
-import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
+import {
+  FastifyAdapter,
+  NestFastifyApplication,
+} from '@nestjs/platform-fastify';
 import { ValidationPipe, Logger as NestLogger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
@@ -55,7 +58,9 @@ async function bootstrap() {
   if (nodeEnv !== 'production') {
     const config = new DocumentBuilder()
       .setTitle('Spotify Jenkins CV API')
-      .setDescription('API REST desenvolvida com TypeScript, NestJS e integração Jenkins')
+      .setDescription(
+        'API REST desenvolvida com TypeScript, NestJS e integração Jenkins',
+      )
       .setVersion('1.0.0')
       .addTag('health', 'Health check endpoints')
       .addTag('auth', 'Autenticação OAuth 2.0 com Spotify')

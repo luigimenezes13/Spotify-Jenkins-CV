@@ -1,8 +1,18 @@
-import { Controller, Post, Body, Query, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Query,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { SpotifyService } from '../spotify/spotify.service';
 import { AuthService } from '../auth/auth.service';
-import { PlaylistCreateRequestDto, PlaylistCreateResponseDto, AuthUrlResponseDto } from '@/common/dtos';
+import {
+  PlaylistCreateRequestDto,
+  PlaylistCreateResponseDto,
+} from '@/common/dtos';
 import { Logger } from '@/utils/logger';
 import { ConfigService } from '@nestjs/config';
 import { EnvConfig } from '@/config/env.config';
@@ -21,7 +31,7 @@ export class PlaylistController {
   }
 
   @Post('create')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Cria uma playlist real no Spotify baseada no mood do usuário',
     description: `
       Moods suportados:
@@ -32,7 +42,7 @@ export class PlaylistController {
       - neutral: Músicas equilibradas
       - sad: Músicas melancólicas e emotivas
       - surprise: Músicas energéticas e variadas
-    `
+    `,
   })
   @ApiQuery({ name: 'state', description: 'Estado de autenticação do usuário' })
   @ApiResponse({
@@ -96,10 +106,6 @@ export class PlaylistController {
       const tokenData = this.authService.getUserToken(state);
       if (!tokenData) {
         const authUrl = this.authService.getAuthorizationUrl(state);
-        const authResponse: AuthUrlResponseDto = {
-          auth_url: authUrl,
-          state,
-        };
 
         throw new HttpException(
           {
@@ -111,11 +117,15 @@ export class PlaylistController {
         );
       }
 
-      const userData = await this.spotifyService.getCurrentUser(tokenData.access_token);
+      const userData = await this.spotifyService.getCurrentUser(
+        tokenData.access_token,
+      );
       const userId = userData.id;
-      const userName = userData.display_name || userData.id;
 
-      const tracks = await this.spotifyService.getRecommendations(request.mood, 20);
+      const tracks = await this.spotifyService.getRecommendations(
+        request.mood,
+        20,
+      );
 
       if (tracks.length === 0) {
         throw new HttpException(
@@ -148,7 +158,9 @@ export class PlaylistController {
         tracks,
       };
 
-      this.logger.info(`Playlist real criada com sucesso: ${playlist.id} - ${playlist.name}`);
+      this.logger.info(
+        `Playlist real criada com sucesso: ${playlist.id} - ${playlist.name}`,
+      );
 
       return {
         success: true,

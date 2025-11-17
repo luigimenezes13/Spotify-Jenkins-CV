@@ -22,7 +22,8 @@ interface TokenData {
 @Injectable()
 export class AuthService {
   private readonly logger: Logger;
-  private readonly scopes = 'playlist-modify-public playlist-modify-private user-read-private';
+  private readonly scopes =
+    'playlist-modify-public playlist-modify-private user-read-private';
   private readonly userTokens: Map<string, TokenData> = new Map();
 
   constructor(private readonly configService: ConfigService<EnvConfig>) {
@@ -34,8 +35,12 @@ export class AuthService {
       state = randomBytes(32).toString('base64url');
     }
 
-    const clientId = this.configService.get('SPOTIFY_CLIENT_ID', { infer: true });
-    const redirectUri = this.configService.get('SPOTIFY_REDIRECT_URI', { infer: true });
+    const clientId = this.configService.get('SPOTIFY_CLIENT_ID', {
+      infer: true,
+    });
+    const redirectUri = this.configService.get('SPOTIFY_REDIRECT_URI', {
+      infer: true,
+    });
 
     if (!clientId) {
       throw new Error('SPOTIFY_CLIENT_ID não configurado');
@@ -55,15 +60,23 @@ export class AuthService {
   }
 
   async exchangeCodeForToken(code: string, state?: string): Promise<TokenData> {
-    const clientId = this.configService.get('SPOTIFY_CLIENT_ID', { infer: true });
-    const clientSecret = this.configService.get('SPOTIFY_CLIENT_SECRET', { infer: true });
-    const redirectUri = this.configService.get('SPOTIFY_REDIRECT_URI', { infer: true });
+    const clientId = this.configService.get('SPOTIFY_CLIENT_ID', {
+      infer: true,
+    });
+    const clientSecret = this.configService.get('SPOTIFY_CLIENT_SECRET', {
+      infer: true,
+    });
+    const redirectUri = this.configService.get('SPOTIFY_REDIRECT_URI', {
+      infer: true,
+    });
 
     if (!clientId || !clientSecret) {
       throw new Error('Spotify client credentials não configuradas');
     }
 
-    const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+    const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString(
+      'base64',
+    );
 
     try {
       const response = await axios.post(
@@ -97,14 +110,20 @@ export class AuthService {
   }
 
   async refreshAccessToken(refreshToken: string): Promise<TokenData> {
-    const clientId = this.configService.get('SPOTIFY_CLIENT_ID', { infer: true });
-    const clientSecret = this.configService.get('SPOTIFY_CLIENT_SECRET', { infer: true });
+    const clientId = this.configService.get('SPOTIFY_CLIENT_ID', {
+      infer: true,
+    });
+    const clientSecret = this.configService.get('SPOTIFY_CLIENT_SECRET', {
+      infer: true,
+    });
 
     if (!clientId || !clientSecret) {
       throw new Error('Spotify client credentials não configuradas');
     }
 
-    const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+    const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString(
+      'base64',
+    );
 
     try {
       const response = await axios.post(
@@ -132,13 +151,18 @@ export class AuthService {
 
   async getCurrentUser(accessToken: string): Promise<SpotifyUser> {
     try {
-      const response = await axios.get<SpotifyUser>('https://api.spotify.com/v1/me', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
+      const response = await axios.get<SpotifyUser>(
+        'https://api.spotify.com/v1/me',
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
         },
-      });
+      );
 
-      this.logger.info(`Informações do usuário obtidas: ${response.data.display_name || 'N/A'}`);
+      this.logger.info(
+        `Informações do usuário obtidas: ${response.data.display_name || 'N/A'}`,
+      );
       return response.data;
     } catch (error) {
       this.logger.error('Erro ao obter usuário', error);

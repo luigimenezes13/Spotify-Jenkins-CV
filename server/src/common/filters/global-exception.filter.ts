@@ -30,10 +30,13 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
-      
+
       if (typeof exceptionResponse === 'string') {
         message = exceptionResponse;
-      } else if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
+      } else if (
+        typeof exceptionResponse === 'object' &&
+        exceptionResponse !== null
+      ) {
         const responseObj = exceptionResponse as Record<string, unknown>;
         message = (responseObj.message as string) || message;
         details = responseObj;
@@ -51,17 +54,13 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       method: request.method,
     };
 
-    this.logger.error(
-      `HTTP ${status} Error: ${message}`,
-      exception,
-      {
-        url: request.url,
-        method: request.method,
-        status,
-        userAgent: request.headers['user-agent'],
-        ip: request.ip,
-      },
-    );
+    this.logger.error(`HTTP ${status} Error: ${message}`, exception, {
+      url: request.url,
+      method: request.method,
+      status,
+      userAgent: request.headers['user-agent'],
+      ip: request.ip,
+    });
 
     response.status(status).send(errorResponse);
   }

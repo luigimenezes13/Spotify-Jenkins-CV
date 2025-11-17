@@ -29,7 +29,9 @@ export class AuthController {
   }
 
   @Get('login')
-  @ApiOperation({ summary: 'Inicia o fluxo de autenticação OAuth 2.0 com o Spotify' })
+  @ApiOperation({
+    summary: 'Inicia o fluxo de autenticação OAuth 2.0 com o Spotify',
+  })
   @ApiResponse({
     status: 200,
     description: 'URL de autorização gerada com sucesso',
@@ -81,7 +83,10 @@ export class AuthController {
   @Get('callback')
   @ApiOperation({ summary: 'Callback do OAuth 2.0 do Spotify' })
   @ApiQuery({ name: 'code', description: 'Código de autorização do Spotify' })
-  @ApiQuery({ name: 'state', description: 'Estado para validação de segurança' })
+  @ApiQuery({
+    name: 'state',
+    description: 'Estado para validação de segurança',
+  })
   @ApiResponse({
     status: 200,
     description: 'Autenticação realizada com sucesso',
@@ -105,17 +110,19 @@ export class AuthController {
     @Query('code') code: string,
     @Query('state') state: string,
     @Res() reply: FastifyReply,
-  ): Promise<
-    | {
-        success: boolean;
-        data: AuthStatusDto;
-        message: string;
-      }
-    | void
-  > {
+  ): Promise<{
+    success: boolean;
+    data: AuthStatusDto;
+    message: string;
+  } | void> {
     try {
-      const tokenData = await this.authService.exchangeCodeForToken(code, state);
-      const userData = await this.authService.getCurrentUser(tokenData.access_token);
+      const tokenData = await this.authService.exchangeCodeForToken(
+        code,
+        state,
+      );
+      const userData = await this.authService.getCurrentUser(
+        tokenData.access_token,
+      );
       this.authService.storeUserToken(state, tokenData);
 
       const authStatus: AuthStatusDto = {
@@ -124,10 +131,13 @@ export class AuthController {
         display_name: userData.display_name || userData.id,
       };
 
-      this.logger.info(`Usuário autenticado com sucesso: ${authStatus.display_name}`);
+      this.logger.info(
+        `Usuário autenticado com sucesso: ${authStatus.display_name}`,
+      );
 
       const frontendUrl =
-        this.configService.get('FRONTEND_URL', { infer: true }) ?? 'http://127.0.0.1:8000';
+        this.configService.get('FRONTEND_URL', { infer: true }) ??
+        'http://127.0.0.1:8000';
 
       if (reply && frontendUrl) {
         const redirectUrl = new URL(frontendUrl);
@@ -185,7 +195,10 @@ export class AuthController {
 
   @Get('status')
   @ApiOperation({ summary: 'Verifica o status de autenticação do usuário' })
-  @ApiQuery({ name: 'state', description: 'Estado para verificar autenticação' })
+  @ApiQuery({
+    name: 'state',
+    description: 'Estado para verificar autenticação',
+  })
   @ApiResponse({
     status: 200,
     description: 'Status de autenticação verificado',
@@ -205,9 +218,7 @@ export class AuthController {
       },
     },
   })
-  async getAuthStatus(
-    @Query('state') state: string,
-  ): Promise<{
+  async getAuthStatus(@Query('state') state: string): Promise<{
     success: boolean;
     data: AuthStatusDto;
     message: string;
@@ -225,7 +236,9 @@ export class AuthController {
       }
 
       try {
-        const userData = await this.authService.getCurrentUser(tokenData.access_token);
+        const userData = await this.authService.getCurrentUser(
+          tokenData.access_token,
+        );
         const authStatus: AuthStatusDto = {
           authenticated: true,
           user_id: userData.id,
@@ -240,10 +253,14 @@ export class AuthController {
       } catch (error) {
         if (tokenData.refresh_token) {
           try {
-            const newTokenData = await this.authService.refreshAccessToken(tokenData.refresh_token);
+            const newTokenData = await this.authService.refreshAccessToken(
+              tokenData.refresh_token,
+            );
             this.authService.storeUserToken(state, newTokenData);
 
-            const userData = await this.authService.getCurrentUser(newTokenData.access_token);
+            const userData = await this.authService.getCurrentUser(
+              newTokenData.access_token,
+            );
             const authStatus: AuthStatusDto = {
               authenticated: true,
               user_id: userData.id,
@@ -284,7 +301,9 @@ export class AuthController {
   }
 
   @Post('logout')
-  @ApiOperation({ summary: 'Faz logout do usuário removendo o token armazenado' })
+  @ApiOperation({
+    summary: 'Faz logout do usuário removendo o token armazenado',
+  })
   @ApiQuery({ name: 'state', description: 'Estado para fazer logout' })
   @ApiResponse({
     status: 200,
@@ -298,9 +317,7 @@ export class AuthController {
       },
     },
   })
-  async logout(
-    @Query('state') state: string,
-  ): Promise<{
+  async logout(@Query('state') state: string): Promise<{
     success: boolean;
     data: Record<string, never>;
     message: string;

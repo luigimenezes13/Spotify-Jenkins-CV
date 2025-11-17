@@ -8,4 +8,6 @@ export const HealthCheckResponseSchema = z.object({
   environment: z.string(),
 });
 
-export class HealthCheckResponseDto extends createZodDto(HealthCheckResponseSchema) {}
+export class HealthCheckResponseDto extends createZodDto(
+  HealthCheckResponseSchema,
+) {}

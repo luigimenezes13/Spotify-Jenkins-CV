@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
-import { HealthCheckResponseDto, ApiResponseSchema } from '@/common/dtos';
+import { HealthCheckResponseDto } from '@/common/dtos';
 import { Logger } from '@/utils/logger';
 import { EnvConfig } from '@/config/env.config';
 
@@ -54,7 +54,10 @@ export class HealthController {
         environment: nodeEnv,
       };
 
-      this.logger.info('Health check executado com sucesso', { uptime, environment: nodeEnv });
+      this.logger.info('Health check executado com sucesso', {
+        uptime,
+        environment: nodeEnv,
+      });
 
       return {
         success: true,

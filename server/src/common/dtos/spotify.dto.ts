@@ -10,7 +10,15 @@ export const SpotifyTrackSchema = z.object({
 });
 
 export const PlaylistCreateRequestSchema = z.object({
-  mood: z.enum(['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']),
+  mood: z.enum([
+    'angry',
+    'disgust',
+    'fear',
+    'happy',
+    'neutral',
+    'sad',
+    'surprise',
+  ]),
 });
 
 export const PlaylistCreateResponseSchema = z.object({
@@ -20,8 +28,12 @@ export const PlaylistCreateResponseSchema = z.object({
 });
 
 export class SpotifyTrackDto extends createZodDto(SpotifyTrackSchema) {}
-export class PlaylistCreateRequestDto extends createZodDto(PlaylistCreateRequestSchema) {
+export class PlaylistCreateRequestDto extends createZodDto(
+  PlaylistCreateRequestSchema,
+) {
   @IsEnum(['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise'])
   mood: 'angry' | 'disgust' | 'fear' | 'happy' | 'neutral' | 'sad' | 'surprise';
 }
-export class PlaylistCreateResponseDto extends createZodDto(PlaylistCreateResponseSchema) {}
+export class PlaylistCreateResponseDto extends createZodDto(
+  PlaylistCreateResponseSchema,
+) {}

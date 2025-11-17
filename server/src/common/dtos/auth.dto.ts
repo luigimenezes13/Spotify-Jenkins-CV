@@ -18,5 +18,7 @@ export const AuthUrlResponseSchema = z.object({
 });
 
 export class AuthStatusDto extends createZodDto(AuthStatusSchema) {}
-export class SpotifyAuthCallbackDto extends createZodDto(SpotifyAuthCallbackSchema) {}
+export class SpotifyAuthCallbackDto extends createZodDto(
+  SpotifyAuthCallbackSchema,
+) {}
 export class AuthUrlResponseDto extends createZodDto(AuthUrlResponseSchema) {}
