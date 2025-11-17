@@ -22,11 +22,11 @@ pipeline {
             steps {
                 echo 'Configurando ambiente Node.js...'
                 dir("${WORKSPACE_DIR}") {
-                    sh '''
+                    sh '''#!/bin/bash
                         # Instalar Node.js via nvm
                         curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
                         export NVM_DIR="$HOME/.nvm"
-                        [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+                        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
                         nvm install ${NODE_VERSION}
                         nvm use ${NODE_VERSION}
                         
@@ -46,9 +46,9 @@ pipeline {
             steps {
                 echo 'Instalando dependências do projeto NestJS...'
                 dir("${WORKSPACE_DIR}") {
-                    sh '''
+                    sh '''#!/bin/bash
                         export NVM_DIR="$HOME/.nvm"
-                        [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+                        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
                         nvm use ${NODE_VERSION}
                         
                         # Instalar dependências
@@ -62,9 +62,9 @@ pipeline {
             steps {
                 echo 'Executando linting...'
                 dir("${WORKSPACE_DIR}") {
-                    sh '''
+                    sh '''#!/bin/bash
                         export NVM_DIR="$HOME/.nvm"
-                        [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+                        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
                         nvm use ${NODE_VERSION}
                         pnpm run lint:check
                     '''
@@ -76,9 +76,9 @@ pipeline {
             steps {
                 echo 'Verificando formatação do código...'
                 dir("${WORKSPACE_DIR}") {
-                    sh '''
+                    sh '''#!/bin/bash
                         export NVM_DIR="$HOME/.nvm"
-                        [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+                        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
                         nvm use ${NODE_VERSION}
                         pnpm run format:check
                     '''
@@ -90,9 +90,9 @@ pipeline {
             steps {
                 echo 'Verificando tipos TypeScript...'
                 dir("${WORKSPACE_DIR}") {
-                    sh '''
+                    sh '''#!/bin/bash
                         export NVM_DIR="$HOME/.nvm"
-                        [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+                        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
                         nvm use ${NODE_VERSION}
                         pnpm run typecheck
                     '''
@@ -104,9 +104,9 @@ pipeline {
             steps {
                 echo 'Executando testes com cobertura...'
                 dir("${WORKSPACE_DIR}") {
-                    sh '''
+                    sh '''#!/bin/bash
                         export NVM_DIR="$HOME/.nvm"
-                        [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+                        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
                         nvm use ${NODE_VERSION}
                         pnpm run test:cov
                     '''
@@ -146,9 +146,9 @@ pipeline {
             steps {
                 echo 'Compilando aplicação NestJS...'
                 dir("${WORKSPACE_DIR}") {
-                    sh '''
+                    sh '''#!/bin/bash
                         export NVM_DIR="$HOME/.nvm"
-                        [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+                        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
                         nvm use ${NODE_VERSION}
                         pnpm run build
                         
