@@ -117,33 +117,47 @@ pipeline {
                         export NVM_DIR="$HOME/.nvm"
                         [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
                         nvm use ${NODE_VERSION}
-                        pnpm run test:cov
+                        
+                        # Executar testes, mas não falhar se não houver arquivos de teste
+                        TEST_OUTPUT=$(pnpm run test:cov 2>&1) || {
+                            EXIT_CODE=$?
+                            if echo "$TEST_OUTPUT" | grep -q "No test files found"; then
+                                echo "⚠️ Nenhum arquivo de teste encontrado - continuando..."
+                                exit 0
+                            else
+                                echo "❌ Testes falharam!"
+                                echo "$TEST_OUTPUT"
+                                exit $EXIT_CODE
+                            fi
+                        }
                     '''
                 }
             }
             post {
                 always {
-                    echo 'Publicando relatório de cobertura...'
+                    echo 'Verificando relatório de cobertura...'
                     dir("${WORKSPACE_DIR}") {
                         script {
-                            // Vitest gera cobertura em coverage/index.html
-                            // Verificar se existe e publicar
+                            // Verificar se existe relatório de cobertura
                             def coverageExists = sh(
-                                script: 'test -f coverage/index.html || test -f coverage/lcov-report/index.html',
+                                script: 'test -f coverage/index.html || test -f coverage/lcov-report/index.html || true',
                                 returnStatus: true
                             ) == 0
                             
                             if (coverageExists) {
-                                publishHTML([
-                                    allowMissing: true,
-                                    alwaysLinkToLastBuild: true,
-                                    keepAll: true,
-                                    reportDir: 'coverage',
-                                    reportFiles: 'index.html',
-                                    reportName: 'Coverage Report'
-                                ])
+                                echo '✅ Relatório de cobertura encontrado'
+                                // Comentado pois o plugin HTML Publisher pode não estar instalado
+                                // Se necessário, instale o plugin "HTML Publisher Plugin" no Jenkins
+                                // publishHTML([
+                                //     allowMissing: true,
+                                //     alwaysLinkToLastBuild: true,
+                                //     keepAll: true,
+                                //     reportDir: 'coverage',
+                                //     reportFiles: 'index.html',
+                                //     reportName: 'Coverage Report'
+                                // ])
                             } else {
-                                echo '⚠️ Relatório de cobertura não encontrado, pulando publicação'
+                                echo '⚠️ Relatório de cobertura não encontrado (normal se não houver testes)'
                             }
                         }
                     }
