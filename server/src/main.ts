@@ -84,10 +84,10 @@ async function bootstrap() {
 
   await app.listen(port, host);
 
-  logger.info(`🚀 Aplicação NestJS iniciada com sucesso`);
   logger.info(`📡 Servidor rodando em http://${host}:${port}`);
   logger.info(`📚 Documentação disponível em http://${host}:${port}/api/docs`);
   logger.info(`🌍 Ambiente: ${nodeEnv}`);
+  logger.info(`🚀 Aplicação NestJS iniciada com sucesso`);
 
   nestLogger.log(`Application is running on: http://${host}:${port}/api`);
 }
