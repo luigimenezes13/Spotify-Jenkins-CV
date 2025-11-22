@@ -1,6 +1,7 @@
 from reactpy import component, html, use_state
 from typing import Dict, Any, Callable, Optional, List
 from ...services.api import api_client
+from ...services.MoodDetector import mood_detector
 
 MOOD_OPTIONS: List[Dict[str, str]] = [
     {"value": "happy", "label": "Feliz", "description": "Energético, dançante e alto astral."},
@@ -35,6 +36,18 @@ def MoodPage(
             set_success_message("")
             set_error_message("")
 
+    async def handle_detect_mood(event):
+        set_error_message("")
+        set_success_message("")
+        
+        try:
+            detected = mood_detector.open_camera_and_detect()
+            if detected:
+                set_selected_mood(detected)
+                set_success_message(f"Mood detectado com sucesso!")
+        except Exception as e:
+            set_error_message(f"Erro na câmera: {str(e)}")
+
     async def handle_submit(event):
         if not state_token:
             set_error_message("Sessão expirada. Faça login novamente.")
@@ -66,6 +79,15 @@ def MoodPage(
         ),
         html.div(
             {"class_name": "mood-page__selector"},
+            html.button(
+                {
+                    "class_name": "btn btn-secondary",
+                    "on_click": handle_detect_mood,
+                    "disabled": submitting,
+                    "style": {"margin-bottom": "1rem", "width": "100%"}
+                },
+                "📷 Detectar Emoção com Câmera"
+            ),
             html.label({"for": "mood-selector"}, "Selecione um mood"),
             html.select(
                 {
